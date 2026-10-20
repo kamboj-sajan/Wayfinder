@@ -7,9 +7,13 @@ export async function launchBrowser(headless: boolean = true): Promise<{ page: P
   }
   
   try {
-    const browser = await chromium.launch({ 
+    const browser = await chromium.launch({
       headless,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] // Add stability args
+      args: ['--no-sandbox', '--disable-setuid-sandbox'], // Add stability args
+      // runAgent handles Ctrl+C itself so the run is recorded as stopped;
+      // Playwright's default handler would exit the process first.
+      handleSIGINT: false,
+      handleSIGTERM: false
     });
     const context = await browser.newContext({
       viewport: { width: 1280, height: 720 }

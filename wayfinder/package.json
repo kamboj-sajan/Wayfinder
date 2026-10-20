@@ -4,8 +4,8 @@
   "description": "Autonomous AI testing agent that explores and tests web apps from live runtime behaviour",
   "type": "module",
   "scripts": {
-    "start": "tsx runtime-discovery/src/runAgent.ts",
-    "start-headful": "tsx runtime-discovery/src/runAgent.ts --headful",
+    "start": "node --import tsx runtime-discovery/src/runAgent.ts",
+    "start-headful": "node --import tsx runtime-discovery/src/runAgent.ts --headful",
     "test-kb": "tsx testKB.ts",
     "create-collection": "tsx createCollection.ts",
     "compile-extension": "tsc -p vscode-extension",

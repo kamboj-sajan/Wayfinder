@@ -8,7 +8,7 @@ interface TestRun {
   targetUrl: string;
   startedAt: string;
   completedAt?: string;
-  status: "running" | "completed" | "failed";
+  status: "running" | "completed" | "failed" | "stopped";
   totalSteps: number;
   successfulSteps: number;
   failedSteps: number;

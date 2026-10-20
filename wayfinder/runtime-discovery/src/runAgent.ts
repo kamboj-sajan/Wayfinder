@@ -121,6 +121,44 @@ async function main() {
   let failedSteps = 0;
   let anomaliesCount = 0;
 
+  // Every exit path (normal end, Ctrl+C, startup failure, crash) must close the
+  // run record, otherwise the dashboard shows it as "running" forever.
+  let finalStatus: "completed" | "failed" | "stopped" = "completed";
+  // Callers share one in-flight update, so a caller that exits right after
+  // awaiting it cannot cut off a write another caller started.
+  let finalizing: Promise<unknown> | null = null;
+  const finalizeRun = () => {
+    finalizing ??= updateTestRun(graphRunId, {
+      status: finalStatus,
+      completedAt: new Date().toISOString(),
+      totalSteps: stepIndex,
+      successfulSteps,
+      failedSteps,
+      anomaliesCount
+    });
+    return finalizing;
+  };
+
+  // First Ctrl+C stops after the current step; a second one records the run
+  // and exits immediately. npm forwards the signal on top of the terminal
+  // delivering it, so one keypress arrives twice within milliseconds - the
+  // repeat is ignored. Run via `node --import tsx`, not the tsx CLI, whose
+  // signal relay can SIGKILL the agent before it records the run.
+  let stopRequestedAt = 0;
+  const onSignal = async () => {
+    finalStatus = "stopped";
+    process.exitCode = 130;
+    if (stopRequestedAt) {
+      if (Date.now() - stopRequestedAt < 1000) return;
+      await finalizeRun();
+      process.exit(130);
+    }
+    stopRequestedAt = Date.now();
+    console.log("\n🛑 Stopping after the current step (Ctrl+C again to quit now)...");
+  };
+  process.on("SIGINT", onSignal);
+  process.on("SIGTERM", onSignal);
+
   try {
     const state: AgentState = {
       schema_version: "1.0",
@@ -149,18 +187,23 @@ async function main() {
       anomaliesCount: 0
     });
 
+    // Return rather than process.exit() so `finally` still closes the run.
     try {
       await initializeBrowser(headless);
     } catch (error) {
       console.error("❌ Failed to initialize browser:", error instanceof Error ? error.message : String(error));
-      process.exit(1);
+      finalStatus = "failed";
+      process.exitCode = 1;
+      return;
     }
 
     try {
       state.ui_state = await discoverUI(targetUrl, headless);
     } catch (error) {
       console.error("❌ Initial UI discovery failed:", error instanceof Error ? error.message : String(error));
-      process.exit(1);
+      finalStatus = "failed";
+      process.exitCode = 1;
+      return;
     }
 
     let consecutiveFailures = 0;
@@ -170,6 +213,11 @@ async function main() {
 
     for (let step = 0; step < MAX_STEPS; step++) {
       try {
+        if (stopRequestedAt) {
+          console.log("🛑 Stopped by user");
+          break;
+        }
+
         if (state.ui_state?.route === '/error' && step > 5) {
           console.log("🛑 Stuck in error route - terminating");
           break;
@@ -346,23 +394,17 @@ async function main() {
       }
     }
 
-    await updateTestRun(graphRunId, {
-      status: "completed",
-      completedAt: new Date().toISOString(),
-      totalSteps: stepIndex,
-      successfulSteps,
-      failedSteps,
-      anomaliesCount
-    });
-
   } catch (error) {
     console.error("❌ Main execution failed:", error);
+    finalStatus = "failed";
+    process.exitCode = 1;
   } finally {
+    await finalizeRun();
     // Persist the traversal graph exactly once, at the end of the run.
     graphTracker.finishRun();
     await closeBrowser();
     console.log(
-      `\n✅ Run completed. Run ID: ${graphRunId} | ${stepIndex} steps, ${successfulSteps} ok, ${failedSteps} failed, ${anomaliesCount} anomalies`
+      `\n${finalStatus === "completed" ? "✅" : "🛑"} Run ${finalStatus}. Run ID: ${graphRunId} | ${stepIndex} steps, ${successfulSteps} ok, ${failedSteps} failed, ${anomaliesCount} anomalies`
     );
   }
 }

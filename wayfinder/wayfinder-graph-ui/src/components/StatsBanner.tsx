@@ -46,6 +46,8 @@ export default function StatsBanner({ nodes, metadata }: Props) {
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Status</span>
                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${metadata.status === 'completed' ? 'bg-green-100 text-green-700' :
                         metadata.status === 'running' ? 'bg-blue-100 text-blue-700 animate-pulse' :
+                        metadata.status === 'failed' ? 'bg-red-100 text-red-700' :
+                        metadata.status === 'stopped' ? 'bg-amber-100 text-amber-700' :
                             'bg-gray-100 text-gray-700'
                     }`}>
                     {metadata.status}
