@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "run_id": "test-run-001",
+
+  "runtime": {
+    "url": "http://localhost:3000",
+    "browser": "chromium",
+    "timestamp": "2026-01-08T12:00:00Z"
+  },
+
+  "ui_state": {
+    "state_id": "S2",
+    "route": "/loan/documents",
+    "title": "Loan Application - Step 2",
+    "available_actions": ["upload_bill"],
+    "entities": {
+      "applicationId": "abc123"
+    }
+  },
+
+  "last_action": {
+    "action_id": "submit_basic_details",
+    "parameters": {}
+  },
+
+  "observation": {
+    "network_calls": [
+      {
+        "method": "POST",
+        "url": "/loan/basic",
+        "status": 200,
+        "response_time_ms": 280
+      }
+    ],
+    "console_errors": [],
+    "state_delta": {},
+    "screenshots": []
+  },
+
+  "knowledge": {
+    "state_graph": {
+      "S1": {
+        "route": "/loan/basic",
+        "edges": [
+          {
+            "action_id": "submit_basic_details",
+            "to_state": "S2"
+          }
+        ]
+      },
+      "S2": {
+        "route": "/loan/documents",
+        "edges": []
+      }
+    },
+    "action_api_map": {
+      "submit_basic_details": [
+        {
+          "method": "POST",
+          "url": "/loan/basic"
+        }
+      ]
+    },
+    "baselines": {},
+    "risk_scores": {}
+  },
+
+  "decision": {
+    "next_action": null,
+    "control": "CONTINUE"
+  },
+
+  "anomalies": []
+}

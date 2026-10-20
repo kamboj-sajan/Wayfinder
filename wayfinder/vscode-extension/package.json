@@ -1,0 +1,58 @@
+{
+  "name": "wayfinder",
+  "displayName": "Wayfinder",
+  "description": "Autonomous runtime discovery & integration testing agent",
+  "publisher": "wayfinder",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:wayfinderView",
+    "onCommand:wayfinder.start"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "wayfinder.start",
+        "title": "▶ Start Wayfinder Test"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "wayfinder",
+          "title": "Wayfinder",
+          "icon": "media/wayfinder.svg"
+        }
+      ]
+    },
+    "views": {
+      "wayfinder": [
+        {
+          "id": "wayfinderView",
+          "name": "Wayfinder Controls"
+        }
+      ]
+    },
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "wayfinder.start",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,59 @@
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencies
+node_modules/
+*/node_modules/
+*node_modules
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Runtime data (should not be committed)
+runs/
+*/runs/
+screenshots/
+*/screenshots/
+reports/
+*/reports/
+qdrant_data/
+quant-data/
+*/quant-data/
+data/
+*/data/
+training-data/
+*/training-data/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Coverage
+coverage/
+*/coverage/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS files
+Thumbs.db
+.DS_Store

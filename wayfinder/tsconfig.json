@@ -1,0 +1,71 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+
+    /* ===============================
+       MODULE SYSTEM
+    =============================== */
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+
+    /* ===============================
+       RUNTIME TYPES
+    =============================== */
+
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
+
+    /* ===============================
+       TS-NODE FIXES
+    =============================== */
+
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+
+    /* ===============================
+       OUTPUT
+    =============================== */
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* ===============================
+       TYPE SAFETY
+    =============================== */
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    /* ===============================
+       MODULE BEHAVIOR
+    =============================== */
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+
+    /* ===============================
+       MISC
+    =============================== */
+
+    "skipLibCheck": true,
+    "jsx": "react-jsx"
+  },
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "dist",
+    "**/dist",
+    "runtime-discovery/myProject",
+    "wayfinder-graph-ui",
+    "qdrant_data",
+    "storage/collections"
+  ]
+}
