@@ -130,7 +130,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-10">
         <div className="flex items-center gap-4">
-          <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">D</div>
+          <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">W</div>
           <h1 className="text-xl font-black tracking-tight text-slate-800">WAYFINDER <span className="text-indigo-600">LIVE</span></h1>
         </div>
 
