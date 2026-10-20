@@ -3,6 +3,10 @@
   "displayName": "Wayfinder",
   "description": "Autonomous runtime discovery & integration testing agent",
   "publisher": "wayfinder",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kamboj-sajan/Wayfinder.git"
+  },
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.85.0"
@@ -33,7 +37,8 @@
       "wayfinder": [
         {
           "id": "wayfinderView",
-          "name": "Wayfinder Controls"
+          "name": "Wayfinder Controls",
+          "type": "webview"
         }
       ]
     },
@@ -48,11 +53,13 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p ."
+    "compile": "tsc -p .",
+    "package": "npm run compile && vsce package --skip-license"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/vscode": "^1.85.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@vscode/vsce": "^3.2.1"
   }
 }
