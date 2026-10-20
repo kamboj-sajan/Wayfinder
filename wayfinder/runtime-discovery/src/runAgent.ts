@@ -7,9 +7,12 @@ import axios from "axios";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-// Load environment variables
-dotenv.config({ path: 'runtime-discovery/.env' });
+// Load runtime-discovery/.env relative to this file, not the working
+// directory: the VS Code extension starts the agent from runtime-discovery/,
+// where a cwd-relative path missed the file and runs went unsaved.
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
 
 const API_BASE_URL = process.env.WAYFINDER_API_URL || "http://localhost:5050";
 const API_KEY = process.env.WAYFINDER_API_KEY || process.env.API_KEY;
