@@ -10,6 +10,10 @@ invariants, records what it learned, and repeats. The traversal is captured as a
 state graph you can replay in a dashboard, with a screenshot and the agent's
 stated reasoning attached to every step.
 
+**[▶ Watch the demo](https://drive.google.com/file/d/1-7oueO3SMrvWXI1vLhPWmnbxOXuc2fpt/view?usp=sharing)** (90 s):
+the agent logs in to and explores saucedemo.com, then the run is replayed in the
+dashboard.
+
 ```bash
 cd wayfinder
 npm install
