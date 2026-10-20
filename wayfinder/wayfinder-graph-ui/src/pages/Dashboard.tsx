@@ -171,7 +171,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden p-6 gap-6">
         <div className="flex-1 flex flex-col min-w-0">
-          <StatsBanner nodes={nodes} metadata={metadata} />
+          <StatsBanner metadata={metadata} />
 
           <div className="flex-1 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative">
             {nodes.length > 0 ? (

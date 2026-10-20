@@ -47,6 +47,12 @@ export async function getGraph(runId: string) {
   const runs = await getTestRuns();
   const runInfo = runs.find((r: any) => r.runId === runId);
 
+  // Counted from the steps, not the graph: nodes are deduplicated page states,
+  // so counting them reported 4 steps and 0 failures for an 18-step run with 5.
+  // Idle steps (no action to take) are neither successes nor failures.
+  const successfulSteps = steps.filter((s: any) => s.status === "success").length;
+  const failedSteps = steps.filter((s: any) => s.status === "failed" && s.actionType !== "idle").length;
+
   return {
     nodes,
     edges,
@@ -54,7 +60,10 @@ export async function getGraph(runId: string) {
       targetUrl: runInfo?.targetUrl || "",
       status: runInfo?.status || "unknown",
       startedAt: runInfo?.startedAt,
-      completedAt: runInfo?.completedAt
+      completedAt: runInfo?.completedAt,
+      totalSteps: steps.length,
+      successfulSteps,
+      failedSteps
     }
   };
 }

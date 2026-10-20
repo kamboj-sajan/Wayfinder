@@ -1,24 +1,26 @@
 import { useMemo } from 'react';
 
 type Props = {
-    nodes: any[];
     metadata: {
         targetUrl: string;
         status: string;
         startedAt?: string;
         completedAt?: string;
+        totalSteps?: number;
+        successfulSteps?: number;
+        failedSteps?: number;
     };
 };
 
-export default function StatsBanner({ nodes, metadata }: Props) {
+export default function StatsBanner({ metadata }: Props) {
     const stats = useMemo(() => {
-        const total = nodes.length;
-        // These are React Flow nodes: the graph payload lives under `data`.
-        // Reading `n.status` directly always yielded 0 successes and 0 failures.
-        const statusOf = (n: any) => n?.data?.status ?? n?.status;
-        const successful = nodes.filter(n => statusOf(n) === 'success').length;
-        const failed = nodes.filter(n => statusOf(n) === 'error').length;
-        const successRate = total > 0 ? Math.round((successful / total) * 100) : 0;
+        // Step counts come from the API. Counting graph nodes instead
+        // under-reported them, since a node is a page state visited many times.
+        const total = metadata.totalSteps ?? 0;
+        const successful = metadata.successfulSteps ?? 0;
+        const failed = metadata.failedSteps ?? 0;
+        const attempted = successful + failed;
+        const successRate = attempted > 0 ? Math.round((successful / attempted) * 100) : 0;
 
         let duration = "—";
         if (metadata.startedAt) {
@@ -31,7 +33,7 @@ export default function StatsBanner({ nodes, metadata }: Props) {
         }
 
         return { total, successful, failed, successRate, duration };
-    }, [nodes, metadata]);
+    }, [metadata]);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
