@@ -81,7 +81,21 @@ export async function discoverActions(page: Page): Promise<DiscoveredAction[]> {
           rect.bottom <= window.innerHeight &&
           rect.right <= window.innerWidth;
 
-        if (type === 'checkbox' || type === 'radio') {
+        if (type === 'submit' || type === 'button' || type === 'image') {
+          // <input type="submit"> is a button, e.g. many login forms' submit.
+          // Name it the way <button> elements are named so they match.
+          const el = input as HTMLInputElement;
+          const text = (el.value || el.getAttribute('aria-label') || el.title || el.alt || el.name || '').trim();
+          if (text) {
+            results.push({
+              id: 'button_' + text.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+              type: 'button',
+              label: text,
+              viewportSafe: visible,
+              isModal: input.closest('[role="dialog"], .modal, .popup, .overlay') !== null
+            });
+          }
+        } else if (type === 'checkbox' || type === 'radio') {
           results.push({
             id: `${type}_${placeholder.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
             type: type,
@@ -89,7 +103,7 @@ export async function discoverActions(page: Page): Promise<DiscoveredAction[]> {
             viewportSafe: visible,
             inputType: type
           });
-        } else if (type !== 'hidden' && type !== 'submit' && type !== 'button') {
+        } else if (type !== 'hidden') {
           results.push({
             id: `input_${placeholder.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
             type: 'input',

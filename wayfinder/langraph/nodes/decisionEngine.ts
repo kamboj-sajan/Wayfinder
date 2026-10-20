@@ -1,18 +1,20 @@
 import { AgentState, DecisionOutput, ActionContract } from "../types.js";
 import type { KnowledgeItem } from "../../knowledge/schema.js";
 import { generateIntelligentInput } from "../utils/inputGenerator.js";
+import { credentialKind, nextLoginAction } from "../utils/login.js";
 
 const MIN_FIX_CONFIDENCE = 0.6;
 const MIN_PATTERN_CONFIDENCE = 0.5;
 
-/** Highest-confidence item of a given type above a threshold. */
+/** Highest-confidence item of a given type above a threshold that also passes `usable`. */
 function bestOf(
   memories: KnowledgeItem[],
   type: KnowledgeItem["type"],
-  threshold: number
+  threshold: number,
+  usable: (m: KnowledgeItem) => boolean
 ): KnowledgeItem | undefined {
   return memories
-    .filter((m) => m.type === type && (m.confidence ?? 0) > threshold)
+    .filter((m) => m.type === type && (m.confidence ?? 0) > threshold && usable(m))
     .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
 }
 
@@ -33,11 +35,35 @@ export function decisionEngine(state: AgentState): AgentState {
 
     const memories = state.knowledge_context?.memories as KnowledgeItem[] | undefined;
 
+    const actionIds: string[] = actions
+      .map((a: any) => (typeof a === "string" ? a : a?.id))
+      .filter((id: string | undefined): id is string => !!id);
+
+    // Actions already tried while in this exact UI state.
+    const triedHere = new Set(
+      steps
+        .filter((s) => s.state_id === currentStateId)
+        .map((s) => s.action.action_id)
+    );
+
+    // Vector search always returns the nearest memories, however unrelated, so
+    // they must be checked against the current page and error. Without this a
+    // single stored fix was applied on every step and the agent never explored.
+    // Memory may only reorder exploration: its action must be on this page and
+    // untried here, so a persistent background error cannot loop the agent or
+    // send it back (backtracking is left to exploration).
+    const errorSignature = state.anomalies?.length ? state.diagnosis?.error_signature : undefined;
+    const untriedOnPage = (m: KnowledgeItem) =>
+      actionIds.includes(m.solution ?? "") && !triedHere.has(m.solution ?? "");
+    const fixApplies = (m: KnowledgeItem) =>
+      !!errorSignature && m.error_signature === errorSignature && untriedOnPage(m);
+    const patternApplies = untriedOnPage;
+
     let decision: DecisionOutput | undefined;
 
     /* ---------- 1. Proven fix from memory ---------- */
     if (memories?.length) {
-      const fix = bestOf(memories, "fix", MIN_FIX_CONFIDENCE);
+      const fix = bestOf(memories, "fix", MIN_FIX_CONFIDENCE, fixApplies);
 
       if (fix?.solution) {
         const confidence = fix.confidence ?? MIN_FIX_CONFIDENCE;
@@ -57,7 +83,7 @@ export function decisionEngine(state: AgentState): AgentState {
         };
       } else {
         /* ---------- 2. Learned pattern ---------- */
-        const pattern = bestOf(memories, "pattern", MIN_PATTERN_CONFIDENCE);
+        const pattern = bestOf(memories, "pattern", MIN_PATTERN_CONFIDENCE, patternApplies);
 
         if (pattern?.solution) {
           const confidence = pattern.confidence ?? MIN_PATTERN_CONFIDENCE;
@@ -97,16 +123,10 @@ export function decisionEngine(state: AgentState): AgentState {
               source: "exploration"
             };
       } else {
-        // Actions already tried while in this exact UI state.
-        const triedHere = new Set(
-          steps
-            .filter((s) => s.state_id === currentStateId)
-            .map((s) => s.action.action_id)
-        );
+        const untried = actionIds.filter((id) => !triedHere.has(id));
 
-        const next = actions
-          .map((a: any) => (typeof a === "string" ? a : a?.id))
-          .find((id: string | undefined) => !!id && !triedHere.has(id));
+        // Get past a login form before exploring the rest of the page.
+        const next = nextLoginAction(untried, triedHere) ?? untried[0];
 
         if (!next) {
           const backtracked = steps.some(
@@ -132,7 +152,12 @@ export function decisionEngine(state: AgentState): AgentState {
 
           const parameters: Record<string, any> = {};
 
-          if (next.includes("input") || next.includes("textarea")) {
+          const credential = credentialKind(next);
+
+          if (credential) {
+            // The value is resolved at fill time so the secret is never stored.
+            parameters.credential = credential;
+          } else if (next.includes("input") || next.includes("textarea")) {
             parameters.value = generateIntelligentInput({
               actionId: next,
               elementType: next.includes("textarea") ? "textarea" : "input"

@@ -5,6 +5,7 @@ import { waitForPageStability } from "./waitForStability.js";
 import { ActionContract, Observation, UIState } from "./types.js";
 import crypto from "crypto";
 import { normalizeIdentifier } from "./identifierUtils.js";
+import { credentialValue } from "../../langraph/utils/login.js";
 
 let page: Page | null = null;
 let browser: Browser | null = null;
@@ -230,7 +231,16 @@ export async function executeAction(
             const tagName = await el.evaluate(e => e.tagName.toLowerCase());
             let identifier = "";
 
-            if (tagName === "input" || tagName === "textarea" || tagName === "select") {
+            const buttonLabel = await el.evaluate((e: any) =>
+              e.tagName === "INPUT" && ["submit", "button", "image"].includes(e.type)
+                ? (e.value || e.getAttribute("aria-label") || e.title || e.alt || e.name || "").trim()
+                : null
+            );
+
+            if (buttonLabel !== null) {
+              // Mirrors discoverActions: <input type="submit"> is named as a button.
+              identifier = `button_${buttonLabel.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
+            } else if (tagName === "input" || tagName === "textarea" || tagName === "select") {
               const placeholder = await el.evaluate((e: any) => e.placeholder || e.name || "");
               identifier = `${tagName}_${placeholder.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
             } else {
@@ -294,13 +304,12 @@ export async function executeAction(
         }
 
         try {
-          console.log(`🖱️ Clicking element: ${action.action_id}`);
+          console.log(`🖱️ Interacting with element: ${action.action_id}`);
 
-          // For Playwright locators, use different methods
-          if (target.click) {
-            await target.click({ timeout: 5000, force: true });
-          } else {
-            // For ElementHandle objects
+          // Both ElementHandles and Locators get here and share these methods.
+          // This used to branch on `target.click`, which both have, so every
+          // input was clicked and the fill below never ran.
+          {
             await target.scrollIntoViewIfNeeded();
 
             // Cast target to ElementHandle to resolve the call signature ambiguity
@@ -312,16 +321,18 @@ export async function executeAction(
               const inputType = await elementHandle.evaluate((e: any) => e.type || "");
 
               if (tagName === "input" || tagName === "textarea") {
-                if (inputType === "checkbox" || inputType === "radio") {
+                if (["checkbox", "radio", "submit", "button", "image"].includes(inputType)) {
                   await elementHandle.click({ timeout: 5000, force: true });
                 } else {
                   // Use the value the decision engine generated for this field.
                   // It was previously computed and then discarded in favour of
-                  // a literal, so every field received "test input".
+                  // a literal, so every field received "test input". Login
+                  // credentials are looked up here so they are never stored.
                   const value =
-                    typeof action.parameters?.value === "string" && action.parameters.value
+                    credentialValue(action.parameters?.credential) ??
+                    (typeof action.parameters?.value === "string" && action.parameters.value
                       ? action.parameters.value
-                      : "test input";
+                      : "test input");
                   await elementHandle.fill(value, { timeout: 5000 });
                 }
               } else if (tagName === "select") {
