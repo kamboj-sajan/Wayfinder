@@ -15,8 +15,24 @@ export async function discoverActions(page: Page): Promise<DiscoveredAction[]> {
     const actions = await page.evaluate(() => {
       const results = [];
 
+      // Same rule executeAction uses to decide an element is interactable.
+      // Without it, hidden elements such as a closed side menu's links were
+      // listed, and every one cost a failed step with retries.
+      // No named functions in here: tsx wraps them in __name(), which does not
+      // exist in the page, so the callback stays anonymous.
+      const shown = new Set(
+        Array.from(document.querySelectorAll('button, a[href], input, textarea, select')).filter((el) => {
+          const rect = el.getBoundingClientRect();
+          const style = window.getComputedStyle(el);
+          return rect.width > 0 && rect.height > 0 &&
+            style.visibility !== 'hidden' &&
+            style.display !== 'none' &&
+            style.opacity !== '0';
+        })
+      );
+
       // Find buttons
-      const buttons = Array.from(document.querySelectorAll('button'));
+      const buttons = Array.from(document.querySelectorAll('button')).filter((el) => shown.has(el));
       for (const btn of buttons) {
         let text = btn.textContent ? btn.textContent.trim() : "";
         const ariaLabel = btn.getAttribute('aria-label');
@@ -44,7 +60,7 @@ export async function discoverActions(page: Page): Promise<DiscoveredAction[]> {
       }
 
       // Find links
-      const links = Array.from(document.querySelectorAll('a[href]'));
+      const links = Array.from(document.querySelectorAll('a[href]')).filter((el) => shown.has(el));
       for (const link of links) {
         let text = link.textContent ? link.textContent.trim() : "";
         const ariaLabel = link.getAttribute('aria-label');
@@ -71,7 +87,7 @@ export async function discoverActions(page: Page): Promise<DiscoveredAction[]> {
       }
 
       // Find inputs
-      const inputs = Array.from(document.querySelectorAll('input, textarea'));
+      const inputs = Array.from(document.querySelectorAll('input, textarea')).filter((el) => shown.has(el));
       inputs.forEach((node, i) => {
         const input = node as HTMLInputElement | HTMLTextAreaElement;
         const type = input.type || 'text';
@@ -115,7 +131,7 @@ export async function discoverActions(page: Page): Promise<DiscoveredAction[]> {
       });
 
       // Find selects
-      const selects = Array.from(document.querySelectorAll('select'));
+      const selects = Array.from(document.querySelectorAll('select')).filter((el) => shown.has(el));
       selects.forEach((select, i) => {
         const name = select.name || ("select_" + i);
         const options = Array.from(select.options).map(opt => opt.text);

@@ -3,7 +3,9 @@ export async function diagnoserNode(state: any) {
   const anomalies = state.anomalies || [];
 
   if (!anomalies.length) {
-    return state;
+    // Clear the previous turn's diagnosis. Left in place, the learner stored
+    // every later action as a "fix" for that old error.
+    return { ...state, diagnosis: undefined };
   }
 
   // Pick most relevant anomaly
